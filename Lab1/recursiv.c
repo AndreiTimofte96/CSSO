@@ -35,7 +35,7 @@ int main()
 {   
     printf("-----------------------------------\n\n");
 
-    LPSTR path = "C:/Users/iziwork/Desktop/";
+    LPSTR path = "C:/Users/iziwork/Desktop/123/";
     recursiveFct(path);
 
     printf("-----------------------------------\n\n");
