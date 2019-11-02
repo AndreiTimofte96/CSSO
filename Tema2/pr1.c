@@ -90,6 +90,7 @@ int main()
 
     char ch;
     printf("Enter any character \n");
+    fflush(stdout);
     scanf("%c", &ch);
     CloseHandle(hData);
 

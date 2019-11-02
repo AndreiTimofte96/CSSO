@@ -75,15 +75,8 @@ void showRecursiveTree(DWORD _ppid, int depth){
     return;
 }
 
-int main()
-{   
-    HANDLE hData;
+void showTree(){
     int noOfTree = 1;
-    if (!getProcessListFromMemory(hData)){
-        return 0;
-    };
-    CloseHandle(hData);
- 
     for (int index = 0; index < pList.count; index++){
         if (!frecv[index]){
             frecv[index] = 1;
@@ -98,5 +91,99 @@ int main()
             showRecursiveTree(pid, 5);
         }
     }
+    fflush(stdout);
+}
+
+int getNumberOfDescendets(DWORD _ppid){
+    int counter = 1;
+    for (int index = 0; index < pList.count; index++){
+        DWORD pid = pList.procese[index].pid;
+        DWORD ppid = pList.procese[index].ppid;
+        char exeName[256];
+        strcpy(exeName, pList.procese[index].exeName);
+
+        if (ppid == _ppid){
+            counter += getNumberOfDescendets(pid);
+            // printf("%s %d\n", exeName, counter);
+        }
+    }
+    return counter;
+}
+
+void showNumberOfDescendants(char* processName){
+    for (int index = 0; index < pList.count; index++){
+        DWORD pid = pList.procese[index].pid;
+        char exeName[256];
+        strcpy(exeName, pList.procese[index].exeName);
+
+        if (strcmp(exeName, processName) == 0){
+            printf("%s [%d] Nr descendeti: %d\n", 
+                exeName, 
+                pid, 
+                getNumberOfDescendets(pid) - 1
+            );
+        }
+    }
+    fflush(stdout);
+}
+
+void closeAllProcessesWithRoot(DWORD _ppid){
+    
+}
+
+void printOptions(){
+    int inputOption = -1;
+    // Sleep(1000);
+    while(inputOption != 3){
+        printf("\nOptiuni: \n");
+        printf("1) Nume proces - Afisare nr de descendeti (1)\n");
+        printf("2) PID proces - Inchide procese subarbore PID (2)\n");
+        printf("3) Exit (3)\n\n");
+        printf("Alege optiune: ");
+        fflush(stdout);
+        scanf("%d", &inputOption);
+
+        printf("Optiune aleasa: %d\n", inputOption);
+
+        switch(inputOption){
+            case 1: {
+                char processName[100];
+                printf("Nume proces: ");
+                fflush(stdout);
+                scanf("%s", &processName);
+                showNumberOfDescendants(processName);
+                break;
+            }
+            case 2: {
+                int pid;
+                printf("PID: ");
+                fflush(stdout);
+                scanf("%d", &pid);
+                closeAllProcessesWithRoot(pid);
+                break;
+            }
+            case 3: {
+                break;
+            }
+            default: 
+                printf("Optiune invalida!\n");
+        
+        }
+    }
+}
+
+
+int main()
+{   
+    HANDLE hData;
+    if (!getProcessListFromMemory(hData)){
+        return 0;
+    };
+    CloseHandle(hData);
+    
+    showTree();
+
+    printOptions();
+
     return 0;
 }
