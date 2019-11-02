@@ -186,7 +186,7 @@ bool closeOneProcess(DWORD pid){
         FALSE,
         pid)) == NULL
     ){
-        printf("OpenProcessERROR");
+        printf("OpenProcessERROR\n");
         return false;
     }
 
@@ -205,7 +205,7 @@ bool closeOneProcess(DWORD pid){
 void closeAllProcesses(DWORD _ppid){
 
     if (!closeOneProcess(_ppid)){
-        printf("ERROR_7, nu s-a putut inchide procesul cu PID: %d", _ppid);
+        printf("ERROR_7, nu s-a putut inchide procesul cu PID: %d\n", _ppid);
     }
 
     for (int index = 0; index < pList.count; index++){
