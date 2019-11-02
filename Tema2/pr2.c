@@ -16,11 +16,6 @@ struct ProcessList {
 } pList;
 int frecv[2048];
 
-BOOL SetPrivilege(
-    HANDLE hToken,          // access token handle
-    LPCTSTR lpszPrivilege,  // name of privilege to enable/disable
-    BOOL bEnablePrivilege   // to enable or disable privilege
-);
 
 bool setSEPrivilege(LPCSTR lpszPrivilege) {
     //https://support.microsoft.com/en-us/help/131065/how-to-obtain-a-handle-to-any-process-with-sedebugprivilege
@@ -42,8 +37,6 @@ bool setSEPrivilege(LPCSTR lpszPrivilege) {
         return false;
      }
 
-    // LPWSTR x = (LPWSTR)TEXT("SeDebugPrivilege");
-    
     if (!LookupPrivilegeValue(
         NULL,
         lpszPrivilege,
@@ -71,6 +64,7 @@ bool setSEPrivilege(LPCSTR lpszPrivilege) {
     } 
 
     CloseHandle(hToken);
+    printf("SE_DEBUG_NAME setat!\n");
 
     return true;
 }
@@ -204,13 +198,25 @@ bool closeOneProcess(DWORD pid){
     }
 
     CloseHandle(hProcess);
-    printf("Procesul cu pid [%d] a fost terminat.", pid);
+    printf("Procesul cu pid [%d] a fost terminat.\n", pid);
     return true;
 }
 
-void closeAllProcessesWithRoot(DWORD _ppid){
+void closeAllProcesses(DWORD _ppid){
+
     if (!closeOneProcess(_ppid)){
         printf("ERROR_7, nu s-a putut inchide procesul cu PID: %d", _ppid);
+    }
+
+    for (int index = 0; index < pList.count; index++){
+        DWORD pid = pList.procese[index].pid;
+        DWORD ppid = pList.procese[index].ppid;
+        char exeName[256];
+        strcpy(exeName, pList.procese[index].exeName);
+
+        if (ppid == _ppid){
+            closeAllProcesses(pid);
+        }
     }
 }
 
@@ -243,7 +249,7 @@ void printOptions(){
                 printf("PID: ");
                 fflush(stdout);
                 scanf("%d", &pid);
-                closeAllProcessesWithRoot(pid);
+                closeAllProcesses(pid);
                 printf("\n");
                 fflush(stdout);
                 break;
@@ -260,10 +266,10 @@ void printOptions(){
 
 int main()
 {   
-    // if (!setSEPrivilege((LPCSTR) "SeDebugPrivilege")){
-    //     printf("ERROR_1\n");
-    //     return 0;       
-    // }
+    if (!setSEPrivilege((LPCSTR) "SeDebugPrivilege")){
+        printf("ERROR_1\n");
+        return 0;       
+    }
 
     HANDLE hData;
     if (!getProcessListFromMemory(hData)){
