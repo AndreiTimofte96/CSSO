@@ -1,9 +1,8 @@
+#
 #define _CRT_SECURE_NO_WARNINGS
-#define SE_DEBUG_NAME
 #include <Windows.h>
 #include <stdio.h>
 #include <tlhelp32.h>
-
 
 struct InfoProces {
   DWORD pid;
@@ -15,8 +14,66 @@ struct ProcessList {
   int         count;
   InfoProces  procese[2048];
 } pList;
-
 int frecv[2048];
+
+BOOL SetPrivilege(
+    HANDLE hToken,          // access token handle
+    LPCTSTR lpszPrivilege,  // name of privilege to enable/disable
+    BOOL bEnablePrivilege   // to enable or disable privilege
+);
+
+bool setSEPrivilege(LPCSTR lpszPrivilege) {
+    //https://support.microsoft.com/en-us/help/131065/how-to-obtain-a-handle-to-any-process-with-sedebugprivilege
+    HANDLE hProcess;
+    HANDLE hToken;
+    LUID privilegeId;
+    TOKEN_PRIVILEGES tp;
+
+    if(!OpenProcessToken(
+        GetCurrentProcess(), 
+        TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, 
+        &hToken)
+    ) {
+        if (GetLastError() == ERROR_NO_TOKEN) {
+            printf("ERROR_2: OpenProcessToken_ERROR\n");
+            return false;
+         }
+        printf("ERROR_3 \n");
+        return false;
+     }
+
+    // LPWSTR x = (LPWSTR)TEXT("SeDebugPrivilege");
+    
+    if (!LookupPrivilegeValue(
+        NULL,
+        lpszPrivilege,
+        &privilegeId
+    )){ 
+        printf("ERROR_4 %d\n", GetLastError());
+        return false;
+    }
+
+    //setam structura de privilegii ale tokenului;
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = privilegeId;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+    if (!AdjustTokenPrivileges(
+        hToken, 
+        FALSE, 
+        &tp, 
+        sizeof(TOKEN_PRIVILEGES), 
+        (PTOKEN_PRIVILEGES) NULL, 
+        (PDWORD) NULL) 
+    ){ 
+          printf("ERROR_5 AdjustTokenPrivileges error: %u\n", GetLastError() ); 
+          return false; 
+    } 
+
+    CloseHandle(hToken);
+
+    return true;
+}
 
 bool getProcessListFromMemory(HANDLE hData){
     // READ FROM p1 MAPPED FILE
@@ -127,8 +184,34 @@ void showNumberOfDescendants(char* processName){
     fflush(stdout);
 }
 
-void closeAllProcessesWithRoot(DWORD _ppid){
+
+bool closeOneProcess(DWORD pid){
+    HANDLE hProcess;
+    if((hProcess = OpenProcess(
+        PROCESS_ALL_ACCESS,
+        FALSE,
+        pid)) == NULL
+    ){
+        printf("OpenProcessERROR");
+        return false;
+    }
+
+    //aici putem da disable la SE_DEBUG_MODE
+
     
+    if(!TerminateProcess(hProcess, 0xffffffff)){
+        printf("TerminateProcessERROR\n");
+    }
+
+    CloseHandle(hProcess);
+    printf("Procesul cu pid [%d] a fost terminat.", pid);
+    return true;
+}
+
+void closeAllProcessesWithRoot(DWORD _ppid){
+    if (!closeOneProcess(_ppid)){
+        printf("ERROR_7, nu s-a putut inchide procesul cu PID: %d", _ppid);
+    }
 }
 
 void printOptions(){
@@ -152,6 +235,7 @@ void printOptions(){
                 fflush(stdout);
                 scanf("%s", &processName);
                 showNumberOfDescendants(processName);
+                fflush(stdout);
                 break;
             }
             case 2: {
@@ -160,6 +244,8 @@ void printOptions(){
                 fflush(stdout);
                 scanf("%d", &pid);
                 closeAllProcessesWithRoot(pid);
+                printf("\n");
+                fflush(stdout);
                 break;
             }
             case 3: {
@@ -172,11 +258,16 @@ void printOptions(){
     }
 }
 
-
 int main()
 {   
+    // if (!setSEPrivilege((LPCSTR) "SeDebugPrivilege")){
+    //     printf("ERROR_1\n");
+    //     return 0;       
+    // }
+
     HANDLE hData;
     if (!getProcessListFromMemory(hData)){
+        printf("ERROR_6\n");
         return 0;
     };
     CloseHandle(hData);
