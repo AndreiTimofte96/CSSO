@@ -63,7 +63,7 @@ bool setSEPrivilege(LPCSTR lpszPrivilege) {
           return false; 
     } 
 
-    CloseHandle(hToken);
+    // CloseHandle(hToken);
     printf("SE_DEBUG_NAME setat!\n");
 
     return true;
@@ -195,6 +195,7 @@ bool closeOneProcess(DWORD pid){
     
     if(!TerminateProcess(hProcess, 0xffffffff)){
         printf("TerminateProcessERROR\n");
+        return false;
     }
 
     CloseHandle(hProcess);
