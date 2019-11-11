@@ -27,7 +27,7 @@ bool readNumbers(){
         0, 0, 0);
 
     if (pData == NULL) {
-        printf("[PR2]: Cannot get pointer to file mapping. Error code: %d", GetLastError());
+        printf("[PR2]: Cannot get pointer to file mapping. Error code: %d\n", GetLastError());
         CloseHandle(hData);
         return false;
     }
@@ -38,9 +38,7 @@ bool readNumbers(){
 }
 
 void printResult(){
-
-    printf("%d %d", nToRead.randomA, nToRead.computedB);
-    if (nToRead.randomA == 2 * nToRead.computedB){
+    if (nToRead.randomA * 2 == nToRead.computedB){
         printf("[PR2]: CORECT\n\n");
     } else{
          printf("[PR2]: INCORECT\n\n");
@@ -79,20 +77,19 @@ void waitVerifySignalEvent(){
 
 int main()
 {   
-
-    printf("[PR2] INITIALIZARE\n");
+    // printf("[PR2] INITIALIZARE\n");
     fflush(stdout);
-    // while(1){
-        waitVerifySignalEvent();
+
+    waitVerifySignalEvent();
             
-        if(!readNumbers()){
-            return 0;
-        }
-        printResult();
-        if(!setGenerateSignalEvent()){
-            return 0;
-        }
-    // }
+    if(!readNumbers()){
+        return 0;
+    }
+
+    printResult();
+    if(!setGenerateSignalEvent()){
+        return 0;
+    }
 
     return 0;
 }

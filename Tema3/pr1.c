@@ -6,7 +6,7 @@
 #include <unistd.h>
 #define MIN_N 1
 #define MAX_N 1000
-#define NO_OF_ITT 1
+#define NO_OF_ITT 10
 
 
 struct Numbers {
@@ -49,12 +49,12 @@ bool writeNumbers(Numbers nToWrite){
     memcpy(pData, &nToWrite, sizeof(Numbers));
 
     fflush(stdout);
-    CloseHandle(hData);
+    // CloseHandle(hData);
     return true;
 }
 
 void printNumbers(Numbers nToWrite){
-    printf("[PR1]: a=%d b=%d\n", nToWrite.randomA, nToWrite.computedB);
+    printf("[PR1]: a=%d b=%d ", nToWrite.randomA, nToWrite.computedB);
     fflush(stdout);
 }
 
@@ -88,36 +88,48 @@ void waitGenerateSignalEvent(){
     CloseHandle(hGenerate);
 }
 
-int main()
-{   
-    srand(time(NULL)); 
-
+bool createProcess(const char* processPath){
     PROCESS_INFORMATION pi;
     STARTUPINFO si;
     memset(&si, 0, sizeof(si));
     si.cb = sizeof(si);
 
-     if (!CreateProcess("./pr2.exe", NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+     if (!CreateProcess(processPath, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
         printf("[PR1]: Cannot create process %d.\n", GetLastError());
-        return 0;
+        return false;
     }
-    printf("[PR1]: PROCESS PR2 CREAT!\n");
+    // printf("[PR1]: PROCESS PR2 CREAT!\n");
     fflush(stdout);
     sleep(1);
+    return true;
+}
 
+
+int main()
+{   
+    srand(time(NULL)); 
 
     for (int index = 0; index < NO_OF_ITT; index++){
         Numbers nToWrite;
         nToWrite = generateTheNumbers();
+
         if (!writeNumbers(nToWrite)){
             printf("[PR1]: ERROR_1\n");
+            fflush(stdout);
             return 0;
         }
         printNumbers(nToWrite);
+        
+        if(!createProcess("./pr2.exe")){
+            printf("[PR1]: ERROR_2\n");
+            fflush(stdout);
+            return 0;
+        }
 
         setVerifySignalEvent();
 
         waitGenerateSignalEvent();
+        
     }
 
     return 0;
