@@ -1,6 +1,10 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include <Windows.h>
 #include <stdio.h>
+
+#define _CRT_SECURE_NO_WARNINGS
+#define MAPPED_FILE_NAME "tema3"
+#define GENERATE_EVENT_NAME "GenerateNumbers"
+#define VERIFY_EVENT_NAME "VerifyNumbers"
 
 struct Numbers {
   int randomA;
@@ -13,7 +17,7 @@ bool readNumbers(){
     HANDLE hData = OpenFileMapping(
         FILE_MAP_ALL_ACCESS, 
         FALSE, 
-        "tema3"
+        MAPPED_FILE_NAME
     );
 
     if (hData == NULL) {
@@ -37,7 +41,7 @@ bool readNumbers(){
     return true;
 }
 
-void printResult(){
+void printVerifyResult(){
     if (nToRead.randomA * 2 == nToRead.computedB){
         printf("[PR2]: CORECT\n\n");
     } else{
@@ -46,48 +50,45 @@ void printResult(){
     fflush(stdout);
 }
 
-bool setGenerateSignalEvent(){
-    LPCSTR generateEventName = "GenerateNumbers";
-
-    HANDLE hGenerate = OpenEvent(
+bool setSignalEvent(LPCSTR eventName){
+    HANDLE hSetSignal = OpenEvent(
         EVENT_MODIFY_STATE,
         FALSE,
-        generateEventName
+        eventName
     );
-    if (! SetEvent(hGenerate)) {
-        printf("[PR2]: SetEvent failed (%d)\n", GetLastError());
+
+    if (!SetEvent(hSetSignal)) {
+        printf("[PR1]: SetEvent failed (%d)\n", GetLastError());
         return false;
     }
-    CloseHandle(hGenerate);
+    
+    CloseHandle(hSetSignal);
     return true;
 }
 
-void waitVerifySignalEvent(){
-    LPCSTR verifyEventName = "VerifyNumbers";
-    HANDLE hVerify = CreateEvent(
+void waitSignalEvent(LPCSTR eventName){
+    HANDLE hGenerate = CreateEvent(
         NULL,
         TRUE,
         FALSE,
-        verifyEventName
+        eventName
     );
-    WaitForSingleObject(hVerify, INFINITE);
-    //ACUM TRECEM MAI DEPARTE SI CITIM NUMERELE DIN PR1;
-    CloseHandle(hVerify);
+    WaitForSingleObject(hGenerate, INFINITE);
+    //ACUM TRECEM MAI DEPARTE;
+    CloseHandle(hGenerate);
 }
+
 
 int main()
 {   
-    // printf("[PR2] INITIALIZARE\n");
-    fflush(stdout);
-
-    waitVerifySignalEvent();
+    waitSignalEvent((LPCSTR) VERIFY_EVENT_NAME);
             
     if(!readNumbers()){
         return 0;
     }
 
-    printResult();
-    if(!setGenerateSignalEvent()){
+    printVerifyResult();
+    if(!setSignalEvent((LPCSTR) GENERATE_EVENT_NAME)){
         return 0;
     }
 

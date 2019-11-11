@@ -1,12 +1,17 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+
+#define _CRT_SECURE_NO_WARNINGS
 #define MIN_N 1
 #define MAX_N 1000
 #define NO_OF_ITT 10
+#define MAPPED_FILE_NAME "tema3"
+#define GENERATE_EVENT_NAME "GenerateNumbers"
+#define VERIFY_EVENT_NAME "VerifyNumbers"
+
 
 
 struct Numbers {
@@ -21,7 +26,6 @@ Numbers generateTheNumbers(){
     return n;
 }
 
-
 bool writeNumbers(Numbers nToWrite){
     // WRITE TO FILE the two numbers;
     HANDLE hData = CreateFileMapping(
@@ -30,7 +34,7 @@ bool writeNumbers(Numbers nToWrite){
         PAGE_READWRITE, 
         0, 
         sizeof(Numbers), 
-        "tema3"
+        MAPPED_FILE_NAME
     );
 
     if (hData == NULL) {
@@ -58,37 +62,37 @@ void printNumbers(Numbers nToWrite){
     fflush(stdout);
 }
 
-void setVerifySignalEvent(){
-    LPCSTR verifyEventName = "VerifyNumbers";
 
-    HANDLE hVerify = OpenEvent(
+bool setSignalEvent(LPCSTR eventName){
+    HANDLE hSetSignal = OpenEvent(
         EVENT_MODIFY_STATE,
         FALSE,
-        verifyEventName
+        eventName
     );
 
-    if (! SetEvent(hVerify)) {
+    if (!SetEvent(hSetSignal)) {
         printf("[PR1]: SetEvent failed (%d)\n", GetLastError());
-        return;
+        return false;
     }
-    CloseHandle(hVerify);
-
+    
+    CloseHandle(hSetSignal);
+    return true;
 }
 
-void waitGenerateSignalEvent(){
-    LPCSTR generateEventName = "GenerateNumbers";
+void waitSignalEvent(LPCSTR eventName){
     HANDLE hGenerate = CreateEvent(
         NULL,
         TRUE,
         FALSE,
-        generateEventName
+        eventName
     );
     WaitForSingleObject(hGenerate, INFINITE);
-    //ACUM TRECEM MAI DEPARTE SI GENERAM UN NOU SET DE NUMERE;
+
+    //ACUM TRECEM MAI DEPARTE
     CloseHandle(hGenerate);
 }
 
-bool createProcess(const char* processPath){
+bool createProcess(LPCSTR processPath){
     PROCESS_INFORMATION pi;
     STARTUPINFO si;
     memset(&si, 0, sizeof(si));
@@ -104,14 +108,13 @@ bool createProcess(const char* processPath){
     return true;
 }
 
-
 int main()
 {   
     srand(time(NULL)); 
 
     for (int index = 0; index < NO_OF_ITT; index++){
-        Numbers nToWrite;
-        nToWrite = generateTheNumbers();
+
+        Numbers nToWrite = generateTheNumbers();
 
         if (!writeNumbers(nToWrite)){
             printf("[PR1]: ERROR_1\n");
@@ -120,16 +123,18 @@ int main()
         }
         printNumbers(nToWrite);
         
-        if(!createProcess("./pr2.exe")){
+        if(!createProcess((LPCSTR) "./pr2.exe")){
             printf("[PR1]: ERROR_2\n");
             fflush(stdout);
             return 0;
         }
-
-        setVerifySignalEvent();
-
-        waitGenerateSignalEvent();
         
+        if(!setSignalEvent((LPCSTR) VERIFY_EVENT_NAME)){
+            printf("[PR1]: ERROR_3\n");
+            return 0;
+        }
+
+        waitSignalEvent((LPCSTR) GENERATE_EVENT_NAME);
     }
 
     return 0;
