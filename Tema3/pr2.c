@@ -11,7 +11,7 @@ struct Numbers {
   int randomA;
   int computedB;
 } nToRead;
-
+HANDLE hVerify, hGenerate, hData, hSetSignal;
 
 bool readNumbers(){
     // READ FROM p1 MAPPED FILE
@@ -52,36 +52,49 @@ void printVerifyResult(){
 }
 
 bool setSignalEvent(LPCSTR eventName){
-    HANDLE hSetSignal = OpenEvent(
+    hVerify = OpenEvent(
         EVENT_MODIFY_STATE,
         FALSE,
         eventName
     );
 
-    if (!SetEvent(hSetSignal)) {
+    if (!SetEvent(hVerify)) {
         printf("[PR1]: SetEvent failed (%d)\n", GetLastError());
         return false;
     }
-    
-    CloseHandle(hSetSignal);
     return true;
 }
 
 void waitSignalEvent(LPCSTR eventName){
-    HANDLE hGenerate = CreateEvent(
+    hGenerate = CreateEvent(
         NULL,
         TRUE,
         FALSE,
         eventName
     );
     WaitForSingleObject(hGenerate, INFINITE);
-    //ACUM TRECEM MAI DEPARTE;
-    CloseHandle(hGenerate);
+}
+
+
+HANDLE openEvent(LPCSTR eventName){
+    return OpenEvent(
+        EVENT_MODIFY_STATE,
+        FALSE,
+        eventName
+    );
 }
 
 
 int main()
-{      
+{    
+    if (!(hVerify = openEvent((LPCSTR) VERIFY_EVENT_NAME))){
+        printf("[PR1]: Cannot create event %d.\n", GetLastError());
+        return 0;
+    }
+    if(!(hGenerate = openEvent((LPCSTR) GENERATE_EVENT_NAME))){
+        printf("[PR1]: Cannot create event %d.\n", GetLastError());
+        return 0;
+    }
 
     for (int index = 0; index < NO_OF_ITT; index++){
         waitSignalEvent((LPCSTR) VERIFY_EVENT_NAME);
@@ -95,6 +108,10 @@ int main()
             return 0;
         }
     }
+    
+    CloseHandle(hVerify);
+    CloseHandle(hGenerate);
+    CloseHandle(hData);
 
     return 0;
 }

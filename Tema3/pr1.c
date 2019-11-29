@@ -18,6 +18,8 @@ struct Numbers {
   int randomA;
   int computedB;
 };
+HANDLE hVerify, hGenerate, hData;
+
 
 Numbers generateNumbers(){
     Numbers n;
@@ -26,9 +28,9 @@ Numbers generateNumbers(){
     return n;
 }
 
-bool writeNumbers(Numbers nToWrite){
+bool writeNumbers(HANDLE hData, Numbers nToWrite){
     // WRITE TO FILE the two numbers;
-    HANDLE hData = CreateFileMapping(
+    hData = CreateFileMapping(
         INVALID_HANDLE_VALUE, 
         NULL, 
         PAGE_READWRITE, 
@@ -53,7 +55,6 @@ bool writeNumbers(Numbers nToWrite){
     memcpy(pData, &nToWrite, sizeof(Numbers));
 
     fflush(stdout);
-    // CloseHandle(hData);
     return true;
 }
 
@@ -62,34 +63,16 @@ void printNumbers(Numbers nToWrite, int index){
     fflush(stdout);
 }
 
-
-bool setSignalEvent(LPCSTR eventName){
-    HANDLE hSetSignal = OpenEvent(
-        EVENT_MODIFY_STATE,
-        FALSE,
-        eventName
-    );
-
-    if (!SetEvent(hSetSignal)) {
+bool setSignalEvent(HANDLE handle){
+    if (!SetEvent(handle)) {
         printf("[PR1]: SetEvent failed (%d)\n", GetLastError());
         return false;
     }
-    
-    CloseHandle(hSetSignal);
     return true;
 }
 
-void waitSignalEvent(LPCSTR eventName){
-    HANDLE hGenerate = CreateEvent(
-        NULL,
-        TRUE,
-        FALSE,
-        eventName
-    );
-    WaitForSingleObject(hGenerate, INFINITE);
-
-    //ACUM TRECEM MAI DEPARTE
-    CloseHandle(hGenerate);
+void waitSignalEvent(HANDLE handle){
+    WaitForSingleObject(handle, INFINITE);
 }
 
 bool createProcess(LPCSTR processPath){
@@ -108,9 +91,27 @@ bool createProcess(LPCSTR processPath){
     return true;
 }
 
+HANDLE createEvent(LPCSTR eventName){
+    return CreateEvent(
+        NULL,
+        false,
+        false,
+        eventName
+    );
+}
+
 int main()
 {   
     srand(time(NULL)); 
+
+    if (!(hVerify = createEvent((LPCSTR) VERIFY_EVENT_NAME))){
+        printf("[PR1]: Cannot create event %d.\n", GetLastError());
+        return 0;
+    }
+    if(!(hGenerate = createEvent((LPCSTR) GENERATE_EVENT_NAME))){
+        printf("[PR1]: Cannot create event %d.\n", GetLastError());
+        return 0;
+    }
 
     if(!createProcess((LPCSTR) "./pr2.exe")){
         printf("[PR1]: ERROR_2\n");
@@ -120,20 +121,23 @@ int main()
 
     for (int index = 0; index < NO_OF_ITT; index++){
         Numbers nToWrite = generateNumbers();
-        if (!writeNumbers(nToWrite)){
+        if (!writeNumbers(hData, nToWrite)){
             printf("[PR1]: ERROR_1\n");
             fflush(stdout);
             return 0;
         }
         printNumbers(nToWrite, index + 1);        
 
-        if(!setSignalEvent((LPCSTR) VERIFY_EVENT_NAME)){
+        if(!setSignalEvent(hVerify)){
             printf("[PR1]: ERROR_3\n");
             return 0;
         }
-
-        waitSignalEvent((LPCSTR) GENERATE_EVENT_NAME);
+        waitSignalEvent(hGenerate);
     }
+
+    CloseHandle(hVerify);
+    CloseHandle(hGenerate);
+    CloseHandle(hData);
 
     return 0;
 }
