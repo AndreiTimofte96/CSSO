@@ -112,10 +112,14 @@ int main()
 {   
     srand(time(NULL)); 
 
+    if(!createProcess((LPCSTR) "./pr2.exe")){
+        printf("[PR1]: ERROR_2\n");
+        fflush(stdout);
+        return 0;
+    }
+
     for (int index = 0; index < NO_OF_ITT; index++){
-
         Numbers nToWrite = generateTheNumbers();
-
         if (!writeNumbers(nToWrite)){
             printf("[PR1]: ERROR_1\n");
             fflush(stdout);
@@ -123,11 +127,7 @@ int main()
         }
         printNumbers(nToWrite);
         
-        if(!createProcess((LPCSTR) "./pr2.exe")){
-            printf("[PR1]: ERROR_2\n");
-            fflush(stdout);
-            return 0;
-        }
+        
         
         if(!setSignalEvent((LPCSTR) VERIFY_EVENT_NAME)){
             printf("[PR1]: ERROR_3\n");
