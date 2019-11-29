@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #define _CRT_SECURE_NO_WARNINGS
+#define NO_OF_ITT 100
 #define MAPPED_FILE_NAME "tema3"
 #define GENERATE_EVENT_NAME "GenerateNumbers"
 #define VERIFY_EVENT_NAME "VerifyNumbers"
@@ -80,16 +81,19 @@ void waitSignalEvent(LPCSTR eventName){
 
 
 int main()
-{   
-    waitSignalEvent((LPCSTR) VERIFY_EVENT_NAME);
-            
-    if(!readNumbers()){
-        return 0;
-    }
+{      
 
-    printVerifyResult();
-    if(!setSignalEvent((LPCSTR) GENERATE_EVENT_NAME)){
-        return 0;
+    for (int index = 0; index < NO_OF_ITT; index++){
+        waitSignalEvent((LPCSTR) VERIFY_EVENT_NAME);
+                
+        if(!readNumbers()){
+            return 0;
+        }
+
+        printVerifyResult();
+        if(!setSignalEvent((LPCSTR) GENERATE_EVENT_NAME)){
+            return 0;
+        }
     }
 
     return 0;

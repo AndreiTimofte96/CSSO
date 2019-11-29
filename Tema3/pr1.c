@@ -7,7 +7,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define MIN_N 1
 #define MAX_N 1000
-#define NO_OF_ITT 10
+#define NO_OF_ITT 100
 #define MAPPED_FILE_NAME "tema3"
 #define GENERATE_EVENT_NAME "GenerateNumbers"
 #define VERIFY_EVENT_NAME "VerifyNumbers"
@@ -19,7 +19,7 @@ struct Numbers {
   int computedB;
 };
 
-Numbers generateTheNumbers(){
+Numbers generateNumbers(){
     Numbers n;
     n.randomA = rand() % MAX_N + MIN_N;
     n.computedB = 2 * n.randomA;
@@ -57,8 +57,8 @@ bool writeNumbers(Numbers nToWrite){
     return true;
 }
 
-void printNumbers(Numbers nToWrite){
-    printf("[PR1]: a=%d b=%d ", nToWrite.randomA, nToWrite.computedB);
+void printNumbers(Numbers nToWrite, int index){
+    printf("IT: %d [PR1]: a=%d b=%d ", index,  nToWrite.randomA, nToWrite.computedB);
     fflush(stdout);
 }
 
@@ -112,23 +112,21 @@ int main()
 {   
     srand(time(NULL)); 
 
+    if(!createProcess((LPCSTR) "./pr2.exe")){
+        printf("[PR1]: ERROR_2\n");
+        fflush(stdout);
+        return 0;
+    }
+
     for (int index = 0; index < NO_OF_ITT; index++){
-
-        Numbers nToWrite = generateTheNumbers();
-
+        Numbers nToWrite = generateNumbers();
         if (!writeNumbers(nToWrite)){
             printf("[PR1]: ERROR_1\n");
             fflush(stdout);
             return 0;
         }
-        printNumbers(nToWrite);
-        
-        if(!createProcess((LPCSTR) "./pr2.exe")){
-            printf("[PR1]: ERROR_2\n");
-            fflush(stdout);
-            return 0;
-        }
-        
+        printNumbers(nToWrite, index + 1);        
+
         if(!setSignalEvent((LPCSTR) VERIFY_EVENT_NAME)){
             printf("[PR1]: ERROR_3\n");
             return 0;
