@@ -37,8 +37,8 @@ HINTERNET _internetOpen(){
 }
 
 LPCSTR serverUrl = "students.info.uaic.ro" ;
+// LPCSTR urlObject = "~teodor.timofte/CSSO/info1.txt";
 LPCSTR urlObject = "~teodor.timofte/CSSO/info.txt";
-// LPCSTR urlObject = "~teodor.timofte/CSSO/info.txt";
 LPCSTR ftpPath = "C:\\Users\\antimofte\\Documents\\FAC\\CSSO\\Tema4\\ftpServer\\demo";
 
 
@@ -138,6 +138,18 @@ BOOL _ftpPutFile(HINTERNET hFTPInternetConnect, LPCSTR filePath, LPCSTR fileName
     );
 }
 
+BOOL _ftpGetFile(HINTERNET hFTPInternetConnect, LPCSTR ftpFilePath, LPCSTR localPath){
+    return FtpGetFile(
+        hFTPInternetConnect,
+        ftpFilePath,
+        localPath,
+        FALSE, 
+        FILE_ATTRIBUTE_NORMAL,
+        FTP_TRANSFER_TYPE_ASCII,
+        0
+    );
+}
+
 bool _createProcess(LPCSTR processPath){
     PROCESS_INFORMATION pi;
     STARTUPINFO si;
@@ -195,11 +207,16 @@ bool uploadFilesToFTPServer(){
             strcpy(filePath, ftpPath);
             strcat(filePath, "\\");
             strcat(filePath, cmdVal);
+            printf("%s\n", filePath);
             
-            printf("\n%s\n", filePath);
+            //  if (!(bFtpPutFile = _ftpGetFile(hFTPInternetConnect, filePath, "./"))){
+            //     printf("ERROR 8: %d\n %d", GetLastError());
+            //     _internetGetLastResponseInfo();
+            //     return false;
+            // }
 
              if(!_createProcess(filePath)){
-               printf("ERROR 8: %d\n %d", GetLastError());
+               printf("ERROR 9: %d\n %d", GetLastError());
                 return false;
             }
         } 

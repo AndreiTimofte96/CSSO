@@ -1,0 +1,100 @@
+#include <windows.h>
+#include <stdio.h>
+#define SECURITY_MAX_SID_SIZE 68
+
+HKEY hKey;
+
+LONG _RegRegCreateKeyEx(LPSECURITY_ATTRIBUTES lpSecurityAttributes = NULL){
+    const char* regPath = "SOFTWARE\\CSSO\\Tema5";
+    DWORD disposition = 0;
+    return RegCreateKeyEx(
+        HKEY_LOCAL_MACHINE,
+        regPath,
+        0, 
+        NULL, 
+        REG_OPTION_NON_VOLATILE, 
+        KEY_READ,
+        lpSecurityAttributes,
+        &hKey, 
+        &disposition);
+}
+
+void closeHandlers(){
+    RegCloseKey(hKey);
+}
+
+
+BOOL GetAccountSidFromName(LPCTSTR Account, PSID Sid, const DWORD SidSize){
+    SID_NAME_USE snu;
+    DWORD cbSid = SidSize, cchRD = 0;
+    LPTSTR rd = NULL;
+    BOOL succ = LookupAccountName(NULL, Account, Sid, &cbSid, rd, &cchRD, &snu);
+    if (!succ){
+        rd = (LPTSTR) LocalAlloc(LPTR, cchRD * sizeof(*rd));
+        cbSid = SidSize;
+        succ = LookupAccountName(NULL, Account, Sid, &cbSid, rd, &cchRD, &snu);
+        LocalFree(rd);
+    }
+    return succ;
+}
+
+int main()
+{    
+
+    SECURITY_DESCRIPTOR pSecurityDescriptor[SECURITY_DESCRIPTOR_MIN_LENGTH];
+     if (!InitializeSecurityDescriptor(pSecurityDescriptor, SECURITY_DESCRIPTOR_REVISION)){
+          printf("ERROR 1. Cod eroare: %d\n", GetLastError());
+          closeHandlers();
+          return 0;
+     }
+
+
+    /////////////////////////////////////////////
+    BYTE sidSize[SECURITY_MAX_SID_SIZE];
+    PSID sid = (PSID) sidSize;
+
+    TCHAR lpAccountName[100];
+    DWORD size = 100;
+    if (!GetUserName(lpAccountName, &size)){
+        printf("Could not retrieve username. Cod eroare: %d\n", GetLastError());
+        closeHandlers();
+        return 0;
+    }
+
+
+    if(!GetAccountSidFromName(lpAccountName, sid, sizeof(sidSize))){
+        printf("Nu s-a putut creea cheia. Cod eroare: %d\n", GetLastError());
+        closeHandlers();
+        return 0;
+    }
+    printf("%d", sid);
+
+    // SetSecurityDescriptorOwner | SetSecurityDescriptorGroup
+
+
+//     typedef struct _EXPLICIT_ACCESS {
+//  DWORD grfAccessPermissions;
+//  ACCESS_MODE grfAccessMode;
+//  DWORD grfInheritance;
+//  TRUSTEE Trustee;
+// } EXPLICIT_ACCESS,
+
+//     SetEntriesInAcl
+
+
+//     typedef struct _SECURITY_ATTRIBUTES {
+//  DWORD nLength;
+//  LPVOID lpSecurityDescriptor;
+//  BOOL bInheritHandle;
+// } SECURITY_ATTRIBUTES, *PSECURITY_ATTRIBUTES, *LPSECURITY_ATTRIBUTES;
+
+
+//     if ( _RegRegCreateKeyEx() != ERROR_SUCCESS) {
+//         printf("Nu s-a putut creea cheia. Cod eroare: %d\n", GetLastError());
+//         closeHandlers();
+//         return 0;
+//     } 
+    closeHandlers();
+    return 0;
+    
+}
