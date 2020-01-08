@@ -4,11 +4,10 @@
 #include <aclapi.h>
 #include <tchar.h>
 #define SECURITY_MAX_SID_SIZE 68
-#pragma comment(lib, "Advapi32.lib")
 #define _CRT_SECURE_NO_WARNINGS
 
 HKEY hKey;
-const char* regPath = "SOFTWARE\\CSSO\\Tema52";
+const char* regPath = "SOFTWARE\\CSSO\\Tema16";
 
 DWORD _RegCreateKeyEx(SECURITY_ATTRIBUTES lpSecurityAttributes){
     DWORD disposition = 0;
@@ -29,13 +28,13 @@ int main()
 {    
     //GET SIDs
     BYTE sidSize[SECURITY_MAX_SID_SIZE];
-    PSID pSid, pEveryoneSid = NULL;
+    PSID pAdminSid, pEveryoneSid = NULL;
     SID_IDENTIFIER_AUTHORITY creatorSAuth = SECURITY_CREATOR_SID_AUTHORITY;  
     SID_IDENTIFIER_AUTHORITY worldSAuth = SECURITY_WORLD_SID_AUTHORITY;
     if (!AllocateAndInitializeSid(&creatorSAuth, 1,
         SECURITY_CREATOR_GROUP_RID,
         0, 0, 0, 0, 0, 0, 0,
-        &pSid
+        &pAdminSid
     )){  
         printf("ERROR 2. Cod eroare: %d\n", GetLastError());
         return 0;
@@ -59,7 +58,7 @@ int main()
     ea[0].grfInheritance= NO_INHERITANCE;
     ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
     ea[0].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
-    ea[0].Trustee.ptstrName  = (LPTSTR) pSid;
+    ea[0].Trustee.ptstrName  = (LPTSTR) pAdminSid;
 
     ea[1].grfAccessPermissions = KEY_READ;
     ea[1].grfAccessMode = SET_ACCESS;
@@ -87,7 +86,7 @@ int main()
     //SET GROUP SIDs
     if (!SetSecurityDescriptorGroup(
         pSD,
-        pSid,
+        pAdminSid,
         FALSE
     )){
          printf("ERROR 4. Cod eroare: %d\n", GetLastError());
@@ -117,7 +116,7 @@ int main()
     } 
 
 
-    FreeSid(pSid);
+    FreeSid(pAdminSid);
     FreeSid(pEveryoneSid);
     LocalFree(pAcl);
     LocalFree(pSD);

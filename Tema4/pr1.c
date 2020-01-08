@@ -37,8 +37,8 @@ HINTERNET _internetOpen(){
 }
 
 LPCSTR serverUrl = "students.info.uaic.ro" ;
-// LPCSTR urlObject = "~teodor.timofte/CSSO/info1.txt";
-LPCSTR urlObject = "~teodor.timofte/CSSO/info.txt";
+LPCSTR urlObject = "~teodor.timofte/CSSO/info1.txt";
+// LPCSTR urlObject = "~teodor.timofte/CSSO/info.txt";
 LPCSTR ftpPath = "C:\\Users\\antimofte\\Documents\\FAC\\CSSO\\Tema4\\ftpServer\\demo";
 
 
@@ -101,7 +101,7 @@ bool readFileFromHTTPServer(LPCSTR serverUrl, LPCSTR urlObject){
         return false;
     }
 
-     if (!(bInternetFileRead = InternetReadFile(hHttpOpenRequest, &fileData, sizeof(fileData), &dwBytes))){
+    if (!(bInternetFileRead = InternetReadFile(hHttpOpenRequest, &fileData, sizeof(fileData), &dwBytes))){
         printf("ERROR 5: %d\n", GetLastError());
         return false;
     }
@@ -185,6 +185,7 @@ bool uploadFilesToFTPServer(){
         char *cmdType, *cmdVal;
         cmdType = strtok (parsedData.commands[index], " ");
         cmdVal = strtok (NULL, " ");
+
         if (strcmp(cmdType, CMD_PUT) == 0){ //PUT
             char *fileName, *pch;
             char cmdValCopy[100];
@@ -244,5 +245,7 @@ int main()
         return 0;
     };
     closeAllHandles();
+
+    printf("------------------------\n");
     return 0;
 }
