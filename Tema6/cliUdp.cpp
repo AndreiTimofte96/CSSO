@@ -22,9 +22,10 @@ const char HELPCOMMAND[50][50] = {
     {"delete_regkey [REG_KEY]"},
     {"run [FILE_PATH]"},
     {"http_download [URL]"},
-    {"listdir [DIR_PATH]"}
+    {"listdir [DIR_PATH]"},
+    {"listdir_recursive [DIR_PATH]"}
 };
-int numberOfCommands = 8;
+int numberOfCommands = 9;
 
 int sd;			// descriptorul de socket
 struct sockaddr_in server;	// structura folosita pentru conectare 
