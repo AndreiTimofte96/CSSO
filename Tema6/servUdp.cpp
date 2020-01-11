@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <wininet.h>
+#include <conio.h>
 #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)  
 /* portul folosit */
 #define PORT 3000
@@ -40,6 +41,11 @@ int commandIndex;
 char serverUrl[100];
 char urlObject[100];
 char directoryContent[100000];
+
+struct ThreadArguments{
+  struct sockaddr_in client;
+  char command[100];
+};
 
 void InitWinsock(){
     WSADATA wsaData;
@@ -305,9 +311,16 @@ int executeCommand(char* command){
     return 0; //command not found;
   }
 
+  char splitString[50];
+  if(commandIndex == 1){
+    strcpy(splitString, "\"");
+  }else{
+    strcpy(splitString, " ");
+  }
+
   while (pch != NULL){
     strcpy(commandParams[numberOfParams++], pch);
-    pch = strtok (NULL, " ");
+    pch = strtok (NULL, splitString);
   }
 
   if (commandIndex == 0){ // create file
@@ -405,12 +418,53 @@ int executeCommand(char* command){
   return 1;
 }
 
+DWORD WINAPI myThread(LPVOID lpParameter){
+
+  struct ThreadArguments *threadArguments = (struct ThreadArguments *) lpParameter;
+  printf("THREAD %s\n", threadArguments->command);
+
+  char msgrasp[100]=" ";
+
+  int executedCommand = executeCommand(threadArguments->command);
+  bzero(msgrasp, sizeof(msgrasp));
+  if (executedCommand == 1){
+    if (commandIndex == 6){
+      strcat(msgrasp, httpFileData);
+    }else{
+      if (commandIndex == 7 || commandIndex == 8){
+        strcat(msgrasp, directoryContent);
+      }else{
+        strcat(msgrasp, "Comanda a fost executata cu succes!");
+      }
+    }
+  }
+
+  if (executedCommand == -1){
+    strcat(msgrasp, "Eroare! Comanda nu a putut fi executata!");
+  } 
+
+  if (executedCommand == 0){
+    strcat(msgrasp, "Comanda \"");
+    strcat(msgrasp, threadArguments->command);
+    strcat(msgrasp, "\" este invalida!");
+  }
+
+  printf("[server]Trimitem mesajul inapoi...%s\n",msgrasp);
+  /* returnam mesajul clientului */
+  int length = sizeof (threadArguments->client);
+  if (sendto(sd, msgrasp, sizeof(msgrasp), 0, (struct sockaddr*) &threadArguments->client, length) <= 0){
+    perror("[server]Eroare la sendto() catre client.\n");
+    // continue;		/* continuam sa ascultam */
+  } else {
+    printf("[server]Mesajul a fost trasmis cu succes.\n");
+  }
+}
+
 int main ()
 { 
   InitWinsock();
 
   char command[100];
-  char msgrasp[100]=" ";
 
  if(!openServer()) return errno;
   
@@ -430,38 +484,12 @@ int main ()
     }
     printf("[server]Mesajul a fost receptionat...%s\n", command);
 
-    int executedCommand = executeCommand(command);
-    bzero(msgrasp, sizeof(msgrasp));
-    if (executedCommand == 1){
-      if (commandIndex == 6){
-        strcat(msgrasp, httpFileData);
-      }else{
-        if (commandIndex == 7 || commandIndex == 8){
-          strcat(msgrasp, directoryContent);
-        }else{
-          strcat(msgrasp, "Comanda a fost executata cu succes!");
-        }
-      }
-    }
+    DWORD myThreadID;
+    struct ThreadArguments *threadArguments;
+    threadArguments->client = client;
+    strcpy(threadArguments->command, command);
+    HANDLE threadHandle = CreateThread(NULL, 0, myThread, threadArguments, 0, &myThreadID);
 
-    if (executedCommand == -1){
-      strcat(msgrasp, "Eroare! Comanda nu a putut fi executata!");
-    } 
-
-    if (executedCommand == 0){
-      strcat(msgrasp, "Comanda \"");
-      strcat(msgrasp, command);
-      strcat(msgrasp, "\" este invalida!");
-    }
-
-    printf("[server]Trimitem mesajul inapoi...%s\n",msgrasp);
-    /* returnam mesajul clientului */
-    if (sendto(sd, msgrasp, sizeof(msgrasp), 0, (struct sockaddr*) &client, length) <= 0){
-      perror("[server]Eroare la sendto() catre client.\n");
-      continue;		/* continuam sa ascultam */
-    } else {
-      printf("[server]Mesajul a fost trasmis cu succes.\n");
-    }
   }		
 }		
 
