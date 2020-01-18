@@ -419,11 +419,8 @@ int executeCommand(char* command){
 }
 
 DWORD WINAPI myThread(LPVOID lpParameter){
-
   struct ThreadArguments *threadArguments = (struct ThreadArguments *) lpParameter;
-  printf("THREAD %s\n", threadArguments->command);
-
-  char msgrasp[100]=" ";
+  char msgrasp[1000]=" ";
 
   int executedCommand = executeCommand(threadArguments->command);
   bzero(msgrasp, sizeof(msgrasp));

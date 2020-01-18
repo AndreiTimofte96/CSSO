@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
   InitWinsock();
 
   char command[100];		// mesajul trimis
-  char serverRes[100];
+  char serverRes[1000];
   int commandLen = 0, serverResLen = 0, serverLength = 0;
 
   if (argc < 3){
